@@ -82,7 +82,7 @@ const app = () => {
   };
 
   const modalWindowState = {
-    postId: ''
+    postId: '',
   };
 
   const initialState = {
@@ -124,8 +124,8 @@ const app = () => {
         const doc = new DOMParser().parseFromString(data.contents, 'application/xml');
         const items = doc.querySelectorAll('item');
         const feedTitle = doc.querySelector('channel > title');
-        const data1 = postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent)
-        const {id} = data1
+        const data1 = postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent);
+        const { id } = data1;
         items.forEach((item) => {
           const title = item.querySelector('title').textContent;
           const link = item.querySelector('link').textContent;
@@ -137,7 +137,7 @@ const app = () => {
               title,
               link,
               description,
-              clicked: false
+              clicked: false,
             });
           }
         });
@@ -244,12 +244,12 @@ const app = () => {
   };
   const renderClickedLinks = () => (path, id) => {
     const popUp = elements.modalContent;
-    const post = document.querySelector(`[data-id='${id}']`);
-    post.className = 'fw-normal link-secondary';
+    const link = document.querySelector(`[data-id='${id}']`);
+    link.className = 'fw-normal link-secondary';
     const header = popUp.querySelector('.modal-title');
     const block = popUp.querySelector('.modal-body');
     const modalLink = popUp.querySelector('.full-article');
-    modalLink.href = post.href;
+    modalLink.href = link.href;
     const { title } = postsData.posts.find((post) => post.id === id);
     const { description } = postsData.posts.find((post) => post.id === id);
     header.textContent = title;
@@ -282,7 +282,7 @@ const app = () => {
         title,
         link,
         description,
-        clicked: false
+        clicked: false,
       });
     });
   };
@@ -305,7 +305,7 @@ const app = () => {
         e.target.className = 'fw-normal link-secondary';
         break;
       case ('BUTTON'):
-        const id = e.target.dataset.id;
+        const { id } = e.target.dataset;
         watchedСlickState.postId = id;
         break;
       default:
@@ -332,8 +332,7 @@ const app = () => {
   });
   if (initialState.form.data.length > 0) {
     setTimeout(() => checkUpdates(initialState.form.data), 5000);
-  };
-
+  }
 };
 
 export default app;
