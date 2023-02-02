@@ -8,7 +8,7 @@
     "build": "webpack",
     "start": "webpack serve"
   },
-  "author": "",
+  "author": "Nickolay Smuskin",
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.20.12",
