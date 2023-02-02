@@ -81,6 +81,10 @@ const app = () => {
     feeds: [],
   };
 
+  const modalWindowState = {
+    postId: ''
+  };
+
   const initialState = {
     form: {
       processState: 'filling',
@@ -90,29 +94,6 @@ const app = () => {
       field: '',
     },
   };
-
-  elements.postsContainer.addEventListener('click', (e) => {
-    switch (e.target.nodeName) {
-      case ('A'):
-        e.target.className = 'fw-normal link-secondary';
-        break;
-      case ('BUTTON'):
-        const link = e.target.previousElementSibling;
-        link.className = 'fw-normal link-secondary';
-        const popUp = elements.modalContent;
-        const header = popUp.querySelector('.modal-title');
-        const block = popUp.querySelector('.modal-body');
-        const modalLink = popUp.querySelector('.full-article');
-        const { title } = postsData.posts.find((post) => post.id === e.target.dataset.id);
-        const { description } = postsData.posts.find((post) => post.id === e.target.dataset.id);
-        modalLink.href = link.href;
-        header.textContent = title;
-        block.textContent = description;
-        break;
-      default:
-        break;
-    }
-  });
 
   const validation = (field) => {
     schema.validate({ link: field }, { abortEarly: true })
@@ -143,8 +124,8 @@ const app = () => {
         const doc = new DOMParser().parseFromString(data.contents, 'application/xml');
         const items = doc.querySelectorAll('item');
         const feedTitle = doc.querySelector('channel > title');
-        const dataTitle = postsData.feeds.filter((feed) => feed.feedTitle === feedTitle.textContent)[0];
-        const { id } = dataTitle;
+        const data1 = postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent)
+        const {id} = data1
         items.forEach((item) => {
           const title = item.querySelector('title').textContent;
           const link = item.querySelector('link').textContent;
@@ -156,6 +137,7 @@ const app = () => {
               title,
               link,
               description,
+              clicked: false
             });
           }
         });
@@ -260,10 +242,25 @@ const app = () => {
       postsContainer.append(postContainer);
     });
   };
+  const renderClickedLinks = () => (path, id) => {
+    const popUp = elements.modalContent;
+    const post = document.querySelector(`[data-id='${id}']`);
+    post.className = 'fw-normal link-secondary';
+    const header = popUp.querySelector('.modal-title');
+    const block = popUp.querySelector('.modal-body');
+    const modalLink = popUp.querySelector('.full-article');
+    modalLink.href = post.href;
+    const { title } = postsData.posts.find((post) => post.id === id);
+    const { description } = postsData.posts.find((post) => post.id === id);
+    header.textContent = title;
+    block.textContent = description;
+  };
+
   const watchedUpdatesData = onChange(postsData, renderUpdates());
   const watchedfeedsData = onChange(postsData, renderFeeds());
   const watchedpostsData = onChange(postsData, renderPosts());
   const watchedState = onChange(initialState, renderForm(elements.statusMassage));
+  const watchedСlickState = onChange(modalWindowState, renderClickedLinks());
 
   const buildTree = (doc) => {
     const feedsTitle = doc.querySelector('channel > title');
@@ -285,6 +282,7 @@ const app = () => {
         title,
         link,
         description,
+        clicked: false
       });
     });
   };
@@ -300,6 +298,20 @@ const app = () => {
       .then((response) => response.data)
       .then((data) => domParser(data.contents));
   };
+
+  elements.postsContainer.addEventListener('click', (e) => {
+    switch (e.target.nodeName) {
+      case ('A'):
+        e.target.className = 'fw-normal link-secondary';
+        break;
+      case ('BUTTON'):
+        const id = e.target.dataset.id;
+        watchedСlickState.postId = id;
+        break;
+      default:
+        break;
+    }
+  });
 
   const { form } = elements;
 
@@ -320,7 +332,8 @@ const app = () => {
   });
   if (initialState.form.data.length > 0) {
     setTimeout(() => checkUpdates(initialState.form.data), 5000);
-  }
+  };
+
 };
 
 export default app;
