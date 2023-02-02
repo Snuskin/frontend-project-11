@@ -5,4 +5,4 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/5ee6ae46f1a2ff76b207/maintainability)](https://codeclimate.com/github/Snuskin/frontend-project-11/maintainability)
 
 ### Site:
-https://frontend-project-11-snuskin.vercel.app/
+https://frontend-project-11-mocha.vercel.app/
