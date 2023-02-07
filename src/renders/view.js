@@ -1,5 +1,6 @@
 /* eslint-disable no-case-declarations, no-use-before-define, no-unused-expressions */
 /* eslint-disable no-param-reassign, max-len */
+import onChange from 'on-change';
 
 const buildList = () => {
   const cardBorder = document.createElement('div');
@@ -149,27 +150,30 @@ const handleProcessState = (submitButton) => (path, processState) => {
   }
 };
 
-export default (elements, i18nextInstance, state) => (path, value) => {
-  switch (path) {
-    case ('form.dataState'):
-      renderForm(elements, i18nextInstance)(path, value);
-      break;
-    case ('form.processState'):
-      handleProcessState(elements.submitButton)(path, value);
-      break;
-    case ('postsData.posts'):
-      renderPosts(elements, i18nextInstance)(path, value);
-      break;
-    case ('postsData.feeds'):
-      renderFeeds(elements, i18nextInstance)(path, value);
-      break;
-    case ('modalWindowState.postId'):
-      renderClickedLinks(elements, state)(path, value);
-      break;
-    case ('postsData.newPosts'):
-      renderUpdates(elements, state)(path, value);
-      break;
-    default:
-      break;
-  }
+export default (elements, i18nextInstance, state) => {
+  const watchedState = onChange(state, (path, value) => {
+    switch (path) {
+      case ('form.dataState'):
+        renderForm(elements, i18nextInstance)(path, value);
+        break;
+      case ('form.processState'):
+        handleProcessState(elements.submitButton)(path, value);
+        break;
+      case ('postsData.posts'):
+        renderPosts(elements, i18nextInstance)(path, value);
+        break;
+      case ('postsData.feeds'):
+        renderFeeds(elements, i18nextInstance)(path, value);
+        break;
+      case ('modalWindowState.postId'):
+        renderClickedLinks(elements, state)(path, value);
+        break;
+      case ('postsData.newPosts'):
+        renderUpdates(elements, state)(path, value);
+        break;
+      default:
+        break;
+    }
+  });
+  return watchedState;
 };
