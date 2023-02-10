@@ -7,6 +7,7 @@ import axios from 'axios';
 import render from './renders/view.js';
 import resources from './locales/index.js';
 import parserXML from './parsers/parserXML.js';
+import view from './renders/view.js';
 
 const { ru } = resources;
 
@@ -45,7 +46,7 @@ const app = () => {
       postId: '',
     },
   };
-  const watchedState = render(elements, i18nextInstance, initialState);
+  const view = render(elements, i18nextInstance, initialState);
 
   const validation = (field, urls) => {
     const schema = yup.string().trim().url().notOneOf(urls)
@@ -55,11 +56,11 @@ const app = () => {
         getRSS(field);
       })
       .catch((e) => {
-        watchedState.form.processState = 'error';
+        view.form.processState = 'error';
         if (e.type === 'notOneOf') {
-          watchedState.form.dataState = 'duplicate';
+          view.form.dataState = 'duplicate';
         } else {
-          watchedState.form.dataState = 'invalid';
+          view.form.dataState = 'invalid';
         }
       });
   };
@@ -78,14 +79,14 @@ const app = () => {
           if (!error) {
             const items = doc.querySelectorAll('item');
             const feedTitle = doc.querySelector('channel > title');
-            const data1 = watchedState.postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent);
+            const data1 = view.postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent);
             const { id } = data1;
             items.forEach((item) => {
               const title = item.querySelector('title').textContent;
               const link = item.querySelector('link').textContent;
               const description = item.querySelector('description').textContent;
-              if (watchedState.postsData.posts.filter((post) => post.link === link).length === 0) {
-                watchedState.postsData.newPosts.push({
+              if (view.postsData.posts.filter((post) => post.link === link).length === 0) {
+                view.postsData.newPosts.push({
                   feedId: id,
                   id: uniqueId(),
                   title,
@@ -106,47 +107,47 @@ const app = () => {
     if (data === 'Error') {
       throw new Error('noRss');
     } else {
-      watchedState.form.dataState = 'valid';
+      view.form.dataState = 'valid';
 
-      watchedState.form.data.push(elements.input.value);
+      view.form.data.push(elements.input.value);
       elements.input.value = '';
       const id = uniqueId();
       data.feed.id = id;
-      watchedState.postsData.feeds.push(data.feed);
+      view.postsData.feeds.push(data.feed);
       data.posts.forEach((post) => {
         post.feedId = id;
         post.id = uniqueId();
-        watchedState.postsData.posts.push(post);
+        view.postsData.posts.push(post);
       });
 
-      setTimeout(() => checkUpdates(watchedState.form.data), 5000);
+      setTimeout(() => checkUpdates(view.form.data), 5000);
     }
   };
 
   const getRSS = (url) => {
     axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
       .then((response) => {
-        watchedState.form.processState = 'sent';
+        view.form.processState = 'sent';
         domParser(response.data.contents);
       })
       .catch((e) => {
-        watchedState.form.processState = 'sent';
-        e.message === 'noRss' ? watchedState.form.dataState = 'noRss' : watchedState.form.dataState = 'networkError';
+        view.form.processState = 'sent';
+        e.message === 'noRss' ? view.form.dataState = 'noRss' : view.form.dataState = 'networkError';
       });
   };
 
   elements.postsContainer.addEventListener('click', (e) => {
     const { id } = e.target.dataset;
-    watchedState.modalWindowState.postId = id;
+    view.modalWindowState.postId = id;
   });
 
   const { form } = elements;
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    watchedState.form.processState = 'sending';
+    view.form.processState = 'sending';
 
-    validation(elements.input.value, watchedState.form.data);
+    validation(elements.input.value, view.form.data);
   });
 };
 
