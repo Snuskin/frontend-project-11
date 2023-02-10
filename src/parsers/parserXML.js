@@ -14,15 +14,14 @@ export default (data) => {
       const title = item.querySelector('title').textContent;
       const link = item.querySelector('link').textContent;
       const description = item.querySelector('description').textContent;
-      if (!title || !link || !description) {
-        return 'Error';
+      if (title && link && description) {
+        result.posts.push({
+          title,
+          link,
+          description,
+          clicked: false,
+        });
       }
-      result.posts.push({
-        title,
-        link,
-        description,
-        clicked: false,
-      });
     });
     result.feed = { feedTitle: feedsTitle.textContent, feedSubtitle: feedsSubtitle.textContent };
     return result;

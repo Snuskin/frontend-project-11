@@ -45,8 +45,24 @@ const app = () => {
       postId: '',
     },
   };
-
   const watchedState = render(elements, i18nextInstance, initialState);
+
+  const validation = (field, urls) => {
+    const schema = yup.string().trim().url().notOneOf(urls)
+      .required();
+    schema.validate(field)
+      .then(() => {
+        getRSS(field);
+      })
+      .catch((e) => {
+        watchedState.form.processState = 'error';
+        if (e.type === 'notOneOf') {
+          watchedState.form.dataState = 'duplicate';
+        } else {
+          watchedState.form.dataState = 'invalid';
+        }
+      });
+  };
 
   const checkUpdates = (urls) => {
     prepareDataForUpdate(urls);
@@ -90,6 +106,8 @@ const app = () => {
     if (data === 'Error') {
       throw new Error('noRss');
     } else {
+      watchedState.form.dataState = 'valid';
+
       watchedState.form.data.push(elements.input.value);
       elements.input.value = '';
       const id = uniqueId();
@@ -107,8 +125,12 @@ const app = () => {
 
   const getRSS = (url) => {
     axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
-      .then((response) => domParser(response.data.contents))
+      .then((response) => {
+        watchedState.form.processState = 'sent';
+        domParser(response.data.contents);
+      })
       .catch((e) => {
+        watchedState.form.processState = 'sent';
         e.message === 'noRss' ? watchedState.form.dataState = 'noRss' : watchedState.form.dataState = 'networkError';
       });
   };
@@ -123,23 +145,8 @@ const app = () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     watchedState.form.processState = 'sending';
-    const schema = yup.string().trim().url().notOneOf(watchedState.form.data)
-      .required();
 
-    const validation = (field) => {
-      schema.validate(field)
-        .then(() => {
-          watchedState.form.dataState = 'valid';
-          watchedState.form.processState = 'sent';
-          getRSS(field);
-        })
-        .catch(() => {
-          watchedState.form.dataState = 'duplicate';
-          watchedState.form.processState = 'error';
-          watchedState.form.dataState = 'invalid';
-        });
-    };
-    validation(elements.input.value);
+    validation(elements.input.value, watchedState.form.data);
   });
 };
 
