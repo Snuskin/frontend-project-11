@@ -46,25 +46,7 @@ const app = () => {
     },
   };
 
-  const schema = yup.object({
-    link: yup.string().trim()
-      .url()
-      .required(),
-  });
-
-  const validation = (field) => {
-    schema.validate({ link: field }, { abortEarly: true })
-      .then(() => {
-        initialState.form.data.push(field);
-        watchedState.form.dataState = 'valid';
-        watchedState.form.processState = 'sent';
-        getRSS(field);
-      })
-      .catch(() => {
-        watchedState.form.processState = 'error';
-        watchedState.form.dataState = 'invalid';
-      });
-  };
+  const watchedState = render(elements, i18nextInstance, initialState);
 
   const checkUpdates = (urls) => {
     prepareDataForUpdate(urls);
@@ -75,18 +57,18 @@ const app = () => {
       axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
         .then((response) => {
           const { data } = response;
-          const doc = parserXML(data.contents);
+          const doc = new DOMParser().parseFromString(data, 'application/xml');
           const error = doc.querySelector('parsererror');
           if (!error) {
             const items = doc.querySelectorAll('item');
             const feedTitle = doc.querySelector('channel > title');
-            const data1 = initialState.postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent);
+            const data1 = watchedState.postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent);
             const { id } = data1;
             items.forEach((item) => {
               const title = item.querySelector('title').textContent;
               const link = item.querySelector('link').textContent;
               const description = item.querySelector('description').textContent;
-              if (initialState.postsData.posts.filter((post) => post.link === link).length === 0) {
+              if (watchedState.postsData.posts.filter((post) => post.link === link).length === 0) {
                 watchedState.postsData.newPosts.push({
                   feedId: id,
                   id: uniqueId(),
@@ -103,51 +85,32 @@ const app = () => {
     setTimeout(() => checkUpdates(urls), 5000);
   };
 
-  const watchedState = render(elements, i18nextInstance, initialState);
-
-  const buildTree = (doc) => {
-    const feedsTitle = doc.querySelector('channel > title');
-    const feedsSubtitle = doc.querySelector('channel > description');
-    const items = doc.querySelectorAll('item');
-    const id = uniqueId();
-    items.forEach((item) => {
-      const title = item.querySelector('title').textContent;
-      const link = item.querySelector('link').textContent;
-      const description = item.querySelector('description').textContent;
-      if (!title || !link || !description) {
-        return;
-      }
-      watchedState.postsData.posts.push({
-        feedId: id,
-        id: uniqueId(),
-        title,
-        link,
-        description,
-        clicked: false,
-      });
-    });
-    if (initialState.postsData.feeds.filter((feed) => feed.feedTitle === feedsTitle.textContent).length === 0) {
-      watchedState.postsData.feeds.push({ id, feedTitle: feedsTitle.textContent, feedSubtitle: feedsSubtitle.textContent });
-    }
-    setTimeout(() => checkUpdates(initialState.form.data), 5000);
-  };
-
   const domParser = (rssText) => {
-    watchedState.form.data.push(elements.input.value);
-    const doc = parserXML(rssText);
-    const error = doc.querySelector('parsererror');
-    if (!error) {
-      buildTree(doc);
+    const data = parserXML(rssText);
+    if (data === 'Error') {
+      throw new Error('noRss');
     } else {
-      watchedState.form.dataState = 'noRss';
+      watchedState.form.data.push(elements.input.value);
+      elements.input.value = '';
+      const id = uniqueId();
+      data.feed.id = id;
+      watchedState.postsData.feeds.push(data.feed);
+      data.posts.forEach((post) => {
+        post.feedId = id;
+        post.id = uniqueId();
+        watchedState.postsData.posts.push(post);
+      });
+
+      setTimeout(() => checkUpdates(watchedState.form.data), 5000);
     }
   };
 
   const getRSS = (url) => {
     axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
-      .catch(() => { watchedState.form.dataState = 'networkError'; })
       .then((response) => domParser(response.data.contents))
-      .catch(() => { watchedState.form.dataState = 'noRss'; });
+      .catch((e) => {
+        e.message === 'noRss' ? watchedState.form.dataState = 'noRss' : watchedState.form.dataState = 'networkError';
+      });
   };
 
   elements.postsContainer.addEventListener('click', (e) => {
@@ -160,13 +123,23 @@ const app = () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     watchedState.form.processState = 'sending';
+    const schema = yup.string().trim().url().notOneOf(watchedState.form.data)
+      .required();
 
-    if (initialState.form.data.includes(elements.input.value)) {
-      watchedState.form.dataState = 'duplicate';
-      watchedState.form.processState = 'error';
-    } else {
-      validation(elements.input.value);
-    }
+    const validation = (field) => {
+      schema.validate(field)
+        .then(() => {
+          watchedState.form.dataState = 'valid';
+          watchedState.form.processState = 'sent';
+          getRSS(field);
+        })
+        .catch(() => {
+          watchedState.form.dataState = 'duplicate';
+          watchedState.form.processState = 'error';
+          watchedState.form.dataState = 'invalid';
+        });
+    };
+    validation(elements.input.value);
   });
 };
 

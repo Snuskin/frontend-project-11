@@ -15,7 +15,7 @@ const buildList = () => {
   cardBorder.append(cardBody, listGroup);
   return cardBorder;
 };
-const renderForm = (elements, i18nextInstance) => (path, value) => {
+const renderForm = (elements, i18nextInstance, value) => {
   const status = elements.statusMassage;
   switch (value) {
     case 'neutral':
@@ -33,7 +33,6 @@ const renderForm = (elements, i18nextInstance) => (path, value) => {
       status.classList.remove('text-sucess', 'text-danger');
       status.classList.add('text-sucess');
       status.textContent = i18nextInstance.t('statusMessage.valid');
-      elements.input.value = '';
       elements.input.focus();
       break;
     case 'duplicate':
@@ -62,7 +61,7 @@ const renderForm = (elements, i18nextInstance) => (path, value) => {
   }
 };
 
-const renderFeeds = (elements, i18nextInstance) => (path, values) => {
+const renderFeeds = (elements, i18nextInstance, values) => {
   const { feedsContainer } = elements;
   feedsContainer.innerHTML = '';
   const feedContainer = buildList();
@@ -84,7 +83,7 @@ const renderFeeds = (elements, i18nextInstance) => (path, values) => {
   });
 };
 
-const renderPosts = (elements, i18nextInstance) => (path, values) => {
+const renderPosts = (elements, i18nextInstance, values) => {
   const { postsContainer } = elements;
   postsContainer.innerHTML = '';
   const postContainer = buildList();
@@ -103,7 +102,7 @@ const renderPosts = (elements, i18nextInstance) => (path, values) => {
     postsContainer.append(postContainer);
   });
 };
-const renderClickedLinks = (elements, state) => (path, id) => {
+const renderClickedLinks = (elements, state, id) => {
   const popUp = elements.modalContent;
   const link = document.querySelector(`[data-id='${id}']`);
   link.className = 'fw-normal link-secondary';
@@ -116,7 +115,7 @@ const renderClickedLinks = (elements, state) => (path, id) => {
   header.textContent = title;
   block.textContent = description;
 };
-const renderUpdates = (elements, state) => (path, values) => {
+const renderUpdates = (elements, state, values) => {
   values.forEach((value) => {
     state.postsData.posts.push(value);
     const pUl = elements.postsContainer.querySelector('ul');
@@ -131,7 +130,7 @@ const renderUpdates = (elements, state) => (path, values) => {
   });
   state.postsData.newPosts = [];
 };
-const handleProcessState = (submitButton) => (path, processState) => {
+const handleProcessState = (submitButton, processState) => {
   switch (processState) {
     case 'sent':
       submitButton.disabled = false;
@@ -154,22 +153,22 @@ export default (elements, i18nextInstance, state) => {
   const watchedState = onChange(state, (path, value) => {
     switch (path) {
       case ('form.dataState'):
-        renderForm(elements, i18nextInstance)(path, value);
+        renderForm(elements, i18nextInstance, value);
         break;
       case ('form.processState'):
-        handleProcessState(elements.submitButton)(path, value);
+        handleProcessState(elements.submitButton, value);
         break;
       case ('postsData.posts'):
-        renderPosts(elements, i18nextInstance)(path, value);
+        renderPosts(elements, i18nextInstance, value);
         break;
       case ('postsData.feeds'):
-        renderFeeds(elements, i18nextInstance)(path, value);
+        renderFeeds(elements, i18nextInstance, value);
         break;
       case ('modalWindowState.postId'):
-        renderClickedLinks(elements, state)(path, value);
+        renderClickedLinks(elements, state, value);
         break;
       case ('postsData.newPosts'):
-        renderUpdates(elements, state)(path, value);
+        renderUpdates(elements, state, value);
         break;
       default:
         break;
