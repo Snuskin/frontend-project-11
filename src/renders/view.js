@@ -150,7 +150,7 @@ const handleProcessState = (submitButton, processState) => {
 };
 
 export default (elements, i18nextInstance, state) => {
-  const watchedState = onChange(state, (path, value) => {
+  const view = onChange(state, (path, value) => {
     switch (path) {
       case ('form.dataState'):
         renderForm(elements, i18nextInstance, value);
@@ -174,5 +174,5 @@ export default (elements, i18nextInstance, state) => {
         break;
     }
   });
-  return watchedState;
+  return view;
 };
