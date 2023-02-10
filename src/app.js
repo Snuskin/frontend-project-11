@@ -7,7 +7,6 @@ import axios from 'axios';
 import render from './renders/view.js';
 import resources from './locales/index.js';
 import parserXML from './parsers/parserXML.js';
-import view from './renders/view.js';
 
 const { ru } = resources;
 
