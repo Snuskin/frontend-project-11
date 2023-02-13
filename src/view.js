@@ -96,7 +96,7 @@ const renderPosts = (elements, i18nextInstance, values, state) => {
     const postLink = document.createElement('a');
     const button = document.createElement('button');
     postList.append(postLink, button);
-    if(state.postsData.clickedPosts.includes(value.id)) {
+    if (state.postsData.clickedPosts.includes(value.id)) {
       postLink.outerHTML = `<a href= ${value.link} class='fw-bold link-secondary' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
     } else {
       postLink.outerHTML = `<a href= ${value.link} class='fw-bold' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
@@ -107,11 +107,10 @@ const renderPosts = (elements, i18nextInstance, values, state) => {
   });
 };
 const renderClickedLinks = (ids) => {
-  ids.forEach(id => {
+  ids.forEach((id) => {
     const link = document.querySelector(`[data-id='${id}']`);
     link.className = 'fw-normal link-secondary';
-  })
-
+  });
 };
 const renderClickedBtns = (elements, state, id) => {
   const popUp = elements.modalContent;
@@ -164,7 +163,8 @@ export default (elements, i18nextInstance, state) => {
         renderClickedBtns(elements, state, value);
         break;
       case ('postsData.clickedPosts'):
-        renderClickedLinks(value)
+        renderClickedLinks(value);
+        break;
       default:
         break;
     }

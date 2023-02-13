@@ -69,28 +69,27 @@ const app = () => {
   };
 
   const prepareDataForUpdate = (url) => {
-      axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
-        .then((response) => {
-          const { data } = response;
-          const newData = parserXML(data.contents);
-          if(newData !== 'Error') {
-            const changedFeed = watchState.postsData.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
-            const { id } = changedFeed;
-            const items = newData.posts; 
-            const newPosts = differenceWith( items, watchState.postsData.posts.map(post => post), (a,b) => a.link === b.link);
-            newPosts.forEach((item) => {
-                watchState.postsData.posts.push({
-                  feedId: id,
-                  id: uniqueId(),
-                  title: item.title,
-                  link: item.link,
-                  description: item.description,
-                });
+    axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
+      .then((response) => {
+        const { data } = response;
+        const newData = parserXML(data.contents);
+        if (newData !== 'Error') {
+          const changedFeed = watchState.postsData.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
+          const { id } = changedFeed;
+          const items = newData.posts;
+          const newPosts = differenceWith(items, watchState.postsData.posts.map((post) => post), (a, b) => a.link === b.link);
+          newPosts.forEach((item) => {
+            watchState.postsData.posts.push({
+              feedId: id,
+              id: uniqueId(),
+              title: item.title,
+              link: item.link,
+              description: item.description,
             });
-          }
+          });
         }
-        )
-        .then(setTimeout(() => checkUpdates(url), 5000))
+      })
+      .then(setTimeout(() => checkUpdates(url), 5000));
   };
 
   const domParser = (rssText) => {
@@ -136,7 +135,7 @@ const app = () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     watchState.form.processState = 'sending';
-    validation(elements.input.value, watchState.postsData.feeds.map(feed => feed.url));
+    validation(elements.input.value, watchState.postsData.feeds.map((feed) => feed.url));
   });
 };
 
