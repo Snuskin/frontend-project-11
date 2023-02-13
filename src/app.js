@@ -1,12 +1,13 @@
 /* eslint-disable no-case-declarations, no-use-before-define, no-unused-expressions */
 /* eslint-disable no-param-reassign, max-len */
 import uniqueId from 'lodash/uniqueId.js';
+import differenceWith from 'lodash/differenceWith.js';
 import i18next from 'i18next';
 import * as yup from 'yup';
 import axios from 'axios';
-import render from './renders/view.js';
+import getWatchState from './view.js';
 import resources from './locales/index.js';
-import parserXML from './parsers/parserXML.js';
+import parserXML from './parserXML.js';
 
 const { ru } = resources;
 
@@ -33,19 +34,18 @@ const app = () => {
   const initialState = {
     form: {
       processState: 'filling',
-      data: [],
       dataState: 'neutral',
     },
     postsData: {
       posts: [],
       feeds: [],
-      newPosts: [],
+      clickedPosts: [],
     },
     modalWindowState: {
       postId: '',
     },
   };
-  const view = render(elements, i18nextInstance, initialState);
+  const watchState = getWatchState(elements, i18nextInstance, initialState);
 
   const validation = (field, urls) => {
     const schema = yup.string().trim().url().notOneOf(urls)
@@ -55,50 +55,42 @@ const app = () => {
         getRSS(field);
       })
       .catch((e) => {
-        view.form.processState = 'error';
+        watchState.form.processState = 'error';
         if (e.type === 'notOneOf') {
-          view.form.dataState = 'duplicate';
+          watchState.form.dataState = 'duplicate';
         } else {
-          view.form.dataState = 'invalid';
+          watchState.form.dataState = 'invalid';
         }
       });
   };
 
-  const checkUpdates = (urls) => {
-    prepareDataForUpdate(urls);
+  const checkUpdates = (url) => {
+    prepareDataForUpdate(url);
   };
 
-  const prepareDataForUpdate = (urls) => {
-    urls.forEach((url) => {
+  const prepareDataForUpdate = (url) => {
       axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
         .then((response) => {
           const { data } = response;
-          const doc = new DOMParser().parseFromString(data, 'application/xml');
-          const error = doc.querySelector('parsererror');
-          if (!error) {
-            const items = doc.querySelectorAll('item');
-            const feedTitle = doc.querySelector('channel > title');
-            const data1 = view.postsData.feeds.find((feed) => feed.feedTitle === feedTitle.textContent);
-            const { id } = data1;
-            items.forEach((item) => {
-              const title = item.querySelector('title').textContent;
-              const link = item.querySelector('link').textContent;
-              const description = item.querySelector('description').textContent;
-              if (view.postsData.posts.filter((post) => post.link === link).length === 0) {
-                view.postsData.newPosts.push({
+          const newData = parserXML(data.contents);
+          if(newData !== 'Error') {
+            const changedFeed = watchState.postsData.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
+            const { id } = changedFeed;
+            const items = newData.posts; 
+            const newPosts = differenceWith( items, watchState.postsData.posts.map(post => post), (a,b) => a.link === b.link);
+            newPosts.forEach((item) => {
+                watchState.postsData.posts.push({
                   feedId: id,
                   id: uniqueId(),
-                  title,
-                  link,
-                  description,
-                  clicked: false,
+                  title: item.title,
+                  link: item.link,
+                  description: item.description,
                 });
-              }
             });
           }
-        });
-    });
-    setTimeout(() => checkUpdates(urls), 5000);
+        }
+        )
+        .then(setTimeout(() => checkUpdates(url), 5000))
   };
 
   const domParser = (rssText) => {
@@ -106,47 +98,45 @@ const app = () => {
     if (data === 'Error') {
       throw new Error('noRss');
     } else {
-      view.form.dataState = 'valid';
-
-      view.form.data.push(elements.input.value);
+      watchState.form.dataState = 'valid';
+      data.feed.url = elements.input.value;
       elements.input.value = '';
       const id = uniqueId();
       data.feed.id = id;
-      view.postsData.feeds.push(data.feed);
+      watchState.postsData.feeds.push(data.feed);
       data.posts.forEach((post) => {
         post.feedId = id;
         post.id = uniqueId();
-        view.postsData.posts.push(post);
+        watchState.postsData.posts.push(post);
       });
-
-      setTimeout(() => checkUpdates(view.form.data), 5000);
+      setTimeout(() => checkUpdates(data.feed.url), 5000);
     }
   };
 
   const getRSS = (url) => {
     axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
       .then((response) => {
-        view.form.processState = 'sent';
+        watchState.form.processState = 'sent';
         domParser(response.data.contents);
       })
       .catch((e) => {
-        view.form.processState = 'sent';
-        e.message === 'noRss' ? view.form.dataState = 'noRss' : view.form.dataState = 'networkError';
+        watchState.form.processState = 'sent';
+        e.message === 'noRss' ? watchState.form.dataState = 'noRss' : watchState.form.dataState = 'networkError';
       });
   };
 
   elements.postsContainer.addEventListener('click', (e) => {
     const { id } = e.target.dataset;
-    view.modalWindowState.postId = id;
+    watchState.modalWindowState.postId = id;
+    watchState.postsData.clickedPosts.push(id);
   });
 
   const { form } = elements;
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    view.form.processState = 'sending';
-
-    validation(elements.input.value, view.form.data);
+    watchState.form.processState = 'sending';
+    validation(elements.input.value, watchState.postsData.feeds.map(feed => feed.url));
   });
 };
 

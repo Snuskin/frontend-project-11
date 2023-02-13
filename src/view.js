@@ -83,7 +83,7 @@ const renderFeeds = (elements, i18nextInstance, values) => {
   });
 };
 
-const renderPosts = (elements, i18nextInstance, values) => {
+const renderPosts = (elements, i18nextInstance, values, state) => {
   const { postsContainer } = elements;
   postsContainer.innerHTML = '';
   const postContainer = buildList();
@@ -96,16 +96,26 @@ const renderPosts = (elements, i18nextInstance, values) => {
     const postLink = document.createElement('a');
     const button = document.createElement('button');
     postList.append(postLink, button);
-    postLink.outerHTML = `<a href= ${value.link} class='fw-bold' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
+    if(state.postsData.clickedPosts.includes(value.id)) {
+      postLink.outerHTML = `<a href= ${value.link} class='fw-bold link-secondary' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
+    } else {
+      postLink.outerHTML = `<a href= ${value.link} class='fw-bold' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
+    }
     button.outerHTML = `<button type="button" data-id="${value.id}" data-bs-toggle="modal" class="btn btn-outline-primary btn-sm" data-bs-target="#modal">${i18nextInstance.t('linkBtn')}</button>`;
     pUl.append(postList);
     postsContainer.append(postContainer);
   });
 };
-const renderClickedLinks = (elements, state, id) => {
+const renderClickedLinks = (ids) => {
+  ids.forEach(id => {
+    const link = document.querySelector(`[data-id='${id}']`);
+    link.className = 'fw-normal link-secondary';
+  })
+
+};
+const renderClickedBtns = (elements, state, id) => {
   const popUp = elements.modalContent;
   const link = document.querySelector(`[data-id='${id}']`);
-  link.className = 'fw-normal link-secondary';
   const header = popUp.querySelector('.modal-title');
   const block = popUp.querySelector('.modal-body');
   const modalLink = popUp.querySelector('.full-article');
@@ -115,21 +125,7 @@ const renderClickedLinks = (elements, state, id) => {
   header.textContent = title;
   block.textContent = description;
 };
-const renderUpdates = (elements, state, values) => {
-  values.forEach((value) => {
-    state.postsData.posts.push(value);
-    const pUl = elements.postsContainer.querySelector('ul');
-    const postList = document.createElement('li');
-    postList.classList.add('list-group-item', 'border-0', 'border-end-0', 'justify-content-between', 'align-items-start', 'd-flex');
-    const postLink = document.createElement('a');
-    const button = document.createElement('button');
-    postList.append(postLink, button);
-    postLink.outerHTML = `<a href= ${value.link} class='fw-bold' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
-    button.outerHTML = `<button type="button" data-id="${value.id}" data-bs-toggle="modal" class="btn btn-outline-primary btn-sm" data-bs-target="#modal">Просмотр</button>`;
-    pUl.append(postList);
-  });
-  state.postsData.newPosts = [];
-};
+
 const handleProcessState = (submitButton, processState) => {
   switch (processState) {
     case 'sent':
@@ -150,7 +146,7 @@ const handleProcessState = (submitButton, processState) => {
 };
 
 export default (elements, i18nextInstance, state) => {
-  const view = onChange(state, (path, value) => {
+  const watchState = onChange(state, (path, value) => {
     switch (path) {
       case ('form.dataState'):
         renderForm(elements, i18nextInstance, value);
@@ -159,20 +155,19 @@ export default (elements, i18nextInstance, state) => {
         handleProcessState(elements.submitButton, value);
         break;
       case ('postsData.posts'):
-        renderPosts(elements, i18nextInstance, value);
+        renderPosts(elements, i18nextInstance, value, state);
         break;
       case ('postsData.feeds'):
         renderFeeds(elements, i18nextInstance, value);
         break;
       case ('modalWindowState.postId'):
-        renderClickedLinks(elements, state, value);
+        renderClickedBtns(elements, state, value);
         break;
-      case ('postsData.newPosts'):
-        renderUpdates(elements, state, value);
-        break;
+      case ('postsData.clickedPosts'):
+        renderClickedLinks(value)
       default:
         break;
     }
   });
-  return view;
+  return watchState;
 };

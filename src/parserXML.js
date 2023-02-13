@@ -19,7 +19,6 @@ export default (data) => {
           title,
           link,
           description,
-          clicked: false,
         });
       }
     });
