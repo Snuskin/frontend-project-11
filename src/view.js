@@ -96,7 +96,7 @@ const renderPosts = (elements, i18nextInstance, values, state) => {
     const postLink = document.createElement('a');
     const button = document.createElement('button');
     postList.append(postLink, button);
-    if (state.postsData.clickedPosts.includes(value.id)) {
+    if (state.uiState.clickedPostIDs.includes(value.id)) {
       postLink.outerHTML = `<a href= ${value.link} class='fw-bold link-secondary' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
     } else {
       postLink.outerHTML = `<a href= ${value.link} class='fw-bold' data-id="${value.id}" target="_blank" rel="noopener noreferrer">${value.title}</a>`;
@@ -119,8 +119,8 @@ const renderClickedBtns = (elements, state, id) => {
   const block = popUp.querySelector('.modal-body');
   const modalLink = popUp.querySelector('.full-article');
   modalLink.href = link.href;
-  const { title } = state.postsData.posts.find((post) => post.id === id);
-  const { description } = state.postsData.posts.find((post) => post.id === id);
+  const { title } = state.posts.find((post) => post.id === id);
+  const { description } = state.posts.find((post) => post.id === id);
   header.textContent = title;
   block.textContent = description;
 };
@@ -153,16 +153,16 @@ export default (elements, i18nextInstance, state) => {
       case ('form.processState'):
         handleProcessState(elements.submitButton, value);
         break;
-      case ('postsData.posts'):
+      case ('posts'):
         renderPosts(elements, i18nextInstance, value, state);
         break;
-      case ('postsData.feeds'):
+      case ('feeds'):
         renderFeeds(elements, i18nextInstance, value);
         break;
       case ('modalWindowState.postId'):
         renderClickedBtns(elements, state, value);
         break;
-      case ('postsData.clickedPosts'):
+      case ('uiState.clickedPostIDs'):
         renderClickedLinks(value);
         break;
       default:
