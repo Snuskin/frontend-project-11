@@ -92,8 +92,6 @@ const app = () => {
   const getRSS = (url) => {
     axios.get(makeProxyLink(url))
       .then((response) => {
-        console.log(watchState.form.processState)
-        console.log(elements.submitButton)
         watchState.form.processState = 'sent';
         const data = parserXML(response.data.contents);
         if (data !== 'Error') {
