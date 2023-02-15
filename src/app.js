@@ -112,7 +112,9 @@ const app = () => {
       })
       .catch((e) => {
         watchState.form.processState = 'sent';
-        e.isAxiosError ? watchState.form.dataState = 'networkError' : watchState.form.dataState = 'noRss';
+        if (e.isAxiosError) {
+          watchState.form.dataState = 'networkError';
+        }
       });
   };
 
