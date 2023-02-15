@@ -108,6 +108,7 @@ const app = () => {
           });
           setTimeout(() => prepareDataForUpdate(data.feed.url), 5000);
         }
+        throw new Error('noRss');
       })
       .catch((e) => {
         watchState.form.processState = 'sent';
