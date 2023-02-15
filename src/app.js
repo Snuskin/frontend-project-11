@@ -107,8 +107,9 @@ const app = () => {
             watchState.posts.push(post);
           });
           setTimeout(() => prepareDataForUpdate(data.feed.url), 5000);
+        } else {
+          throw new Error('noRss');
         }
-        throw new Error('noRss');
       })
       .catch((e) => {
         watchState.form.processState = 'sent';
