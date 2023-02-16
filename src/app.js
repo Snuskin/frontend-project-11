@@ -118,7 +118,7 @@ const app = () => {
           watchState.form.dataState = 'noRss';
         }
       });
-  };
+    };
 
   elements.postsContainer.addEventListener('click', (e) => {
     const { id } = e.target.dataset;
