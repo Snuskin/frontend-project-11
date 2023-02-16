@@ -52,10 +52,11 @@ const app = () => {
       .required();
     schema.validate(field)
       .then(() => {
+        watchState.form.dataState = 'neutral';
         getRSS(field);
       })
       .catch((e) => {
-        watchState.form.processState = 'error';
+        watchState.form.processState = 'filling';
         if (e.type === 'notOneOf') {
           watchState.form.dataState = 'duplicate';
         } else {
@@ -70,51 +71,51 @@ const app = () => {
       .then((response) => {
         const { data } = response;
         const newData = parserXML(data.contents);
-        if (newData !== 'Error') {
-          const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
-          const { id } = changedFeed;
-          const items = newData.posts;
-          const newPosts = differenceWith(items, watchState.posts.map((post) => post), (a, b) => a.link === b.link);
-          newPosts.forEach((item) => {
-            watchState.posts.push({
-              feedId: id,
-              id: uniqueId(),
-              title: item.title,
-              link: item.link,
-              description: item.description,
-            });
+        const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
+        const { id } = changedFeed;
+        const items = newData.posts;
+        const newPosts = differenceWith(items, watchState.posts.map((post) => post), (a, b) => a.link === b.link);
+        const newPostsData = [];
+        newPosts.forEach((item) => {
+          newPostsData.push({
+            feedId: id,
+            id: uniqueId(),
+            title: item.title,
+            link: item.link,
+            description: item.description,
           });
-        }
+        });
+        watchState.posts.push(...newPostsData);
       })
+      .catch((e) => e)
       .finally(setTimeout(() => prepareDataForUpdate(url), 5000));
   };
 
   const getRSS = (url) => {
     axios.get(makeProxyLink(url))
       .then((response) => {
-        watchState.form.processState = 'sent';
+        watchState.form.processState = 'filling';
         const data = parserXML(response.data.contents);
-        if (data !== 'Error') {
-          watchState.form.dataState = 'valid';
-          data.feed.url = elements.input.value;
-          elements.input.value = '';
-          const id = uniqueId();
-          data.feed.id = id;
-          watchState.feeds.push(data.feed);
-          data.posts.forEach((post) => {
-            post.feedId = id;
-            post.id = uniqueId();
-            watchState.posts.push(post);
-          });
-          setTimeout(() => prepareDataForUpdate(data.feed.url), 5000);
-        } else {
-          watchState.form.dataState = 'noRss';
-        }
+        data.feed.url = elements.input.value;
+        watchState.form.dataState = 'valid';
+        const id = uniqueId();
+        data.feed.id = id;
+        watchState.feeds.push(data.feed);
+        const postsData = [];
+        data.posts.forEach((post) => {
+          post.feedId = id;
+          post.id = uniqueId();
+          postsData.push(post);
+        });
+        watchState.posts.push(...postsData);
+        setTimeout(() => prepareDataForUpdate(data.feed.url), 5000);
       })
       .catch((e) => {
-        watchState.form.processState = 'sent';
+        watchState.form.processState = 'filling';
         if (e.isAxiosError) {
           watchState.form.dataState = 'networkError';
+        } else {
+          watchState.form.dataState = 'noRss';
         }
       });
   };
@@ -130,7 +131,7 @@ const app = () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     watchState.form.processState = 'sending';
-    validation(elements.input.value, watchState.feeds.map((feed) => feed.url));
+    validation(elements.input.value.trim(), watchState.feeds.map((feed) => feed.url));
   });
 };
 

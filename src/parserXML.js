@@ -25,5 +25,5 @@ export default (data) => {
     result.feed = { feedTitle: feedsTitle.textContent, feedSubtitle: feedsSubtitle.textContent };
     return result;
   }
-  return 'Error';
+  throw new Error();
 };

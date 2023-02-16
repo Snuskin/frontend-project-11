@@ -33,6 +33,7 @@ const renderForm = (elements, i18nextInstance, value) => {
       status.classList.remove('text-sucess', 'text-danger');
       status.classList.add('text-sucess');
       status.textContent = i18nextInstance.t('statusMessage.valid');
+      elements.input.value = '';
       elements.input.focus();
       break;
     case 'duplicate':
@@ -127,14 +128,8 @@ const renderClickedBtns = (elements, state, id) => {
 
 const handleProcessState = (submitButton, processState) => {
   switch (processState) {
-    case 'sent':
-      submitButton.disabled = false;
-      break;
     case 'sending':
       submitButton.disabled = true;
-      break;
-    case 'error':
-      submitButton.disabled = false;
       break;
     case 'filling':
       submitButton.disabled = false;
