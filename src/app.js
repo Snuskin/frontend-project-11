@@ -1,4 +1,4 @@
-/* eslint-disable no-case-declarations, no-use-before-define, no-unused-expressions no-console */
+/* eslint-disable no-case-declarations, no-use-before-define, no-unused-expressions */
 /* eslint-disable no-param-reassign, max-len, no-console */
 import uniqueId from 'lodash/uniqueId.js';
 import differenceWith from 'lodash/differenceWith.js';
