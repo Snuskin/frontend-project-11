@@ -1,5 +1,5 @@
-/* eslint-disable no-case-declarations, no-use-before-define, no-unused-expressions */
-/* eslint-disable no-param-reassign, max-len */
+/* eslint-disable no-case-declarations, no-use-before-define, no-unused-expressions no-console */
+/* eslint-disable no-param-reassign, max-len, no-console */
 import uniqueId from 'lodash/uniqueId.js';
 import differenceWith from 'lodash/differenceWith.js';
 import i18next from 'i18next';
@@ -74,20 +74,17 @@ const app = () => {
         const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
         const { id } = changedFeed;
         const items = newData.posts;
-        const newPosts = differenceWith(items, watchState.posts.map((post) => post), (a, b) => a.link === b.link);
-        const newPostsData = [];
-        newPosts.forEach((item) => {
-          newPostsData.push({
+        const newPosts = differenceWith(items, watchState.posts, (a, b) => a.link === b.link)
+          .map((item) => ({
             feedId: id,
             id: uniqueId(),
             title: item.title,
             link: item.link,
             description: item.description,
-          });
-        });
-        watchState.posts.push(...newPostsData);
+          }));
+        watchState.posts.push(...newPosts);
       })
-      .catch((e) => e)
+      .catch((e) => console.log(e))
       .finally(setTimeout(() => prepareDataForUpdate(url), 5000));
   };
 
@@ -101,12 +98,13 @@ const app = () => {
         const id = uniqueId();
         data.feed.id = id;
         watchState.feeds.push(data.feed);
-        const postsData = [];
-        data.posts.forEach((post) => {
-          post.feedId = id;
-          post.id = uniqueId();
-          postsData.push(post);
-        });
+        const postsData = data.posts.map((post) => ({
+          title: post.title,
+          link: post.link,
+          description: post.description,
+          feedId: id,
+          id: uniqueId(),
+        }));
         watchState.posts.push(...postsData);
         setTimeout(() => prepareDataForUpdate(data.feed.url), 5000);
       })
