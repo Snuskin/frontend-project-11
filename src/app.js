@@ -20,7 +20,10 @@ const app = () => {
       ru,
     },
   });
-
+  const createFeedId = (id) => ({
+    feedId: id,
+    id: uniqueId(),
+  });
   const elements = {
     form: document.querySelector('.rss-form'),
     statusMassage: document.querySelector('.feedback'),
@@ -36,7 +39,7 @@ const app = () => {
     feeds: [],
     form: {
       processState: 'filling',
-      dataState: 'neutral',
+      dataState: '',
     },
     uiState: {
       clickedPostIDs: [],
@@ -50,13 +53,9 @@ const app = () => {
   const validation = (field, urls) => {
     const schema = yup.string().trim().url().notOneOf(urls)
       .required();
-    schema.validate(field)
-      .then(() => {
-        watchState.form.dataState = 'neutral';
-        getRSS(field);
-      })
+    return schema.validate(field)
+      .then(() => null)
       .catch((e) => {
-        watchState.form.processState = 'filling';
         if (e.type === 'notOneOf') {
           watchState.form.dataState = 'duplicate';
         } else {
@@ -64,52 +63,38 @@ const app = () => {
         }
       });
   };
-  const makeProxyLink = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-  const prepareDataForUpdate = (url) => {
-    axios.get(makeProxyLink(url))
-      .then((response) => {
-        const { data } = response;
-        const newData = parserXML(data.contents);
-        const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
-        const { id } = changedFeed;
-        const items = newData.posts;
-        const newPosts = differenceWith(items, watchState.posts, (a, b) => a.link === b.link)
-          .map((item) => ({
-            feedId: id,
-            id: uniqueId(),
-            title: item.title,
-            link: item.link,
-            description: item.description,
-          }));
-        watchState.posts.push(...newPosts);
-      })
-      .catch((e) => console.log(e))
-      .finally(setTimeout(() => prepareDataForUpdate(url), 5000));
+  const makeProxyLink = (url) => {
+    const proxy = new URL('https://allorigins.hexlet.app/get?disableCache=true');
+    proxy.searchParams.set('url', url);
+    return proxy;
+  };
+
+  const prepareDataForUpdate = (feeds) => {
+    const urls = feeds.map((feed) => feed.url);
+    return urls.map((url) => axios.get(makeProxyLink(url)));
   };
 
   const getRSS = (url) => {
     axios.get(makeProxyLink(url))
       .then((response) => {
-        watchState.form.processState = 'filling';
         const data = parserXML(response.data.contents);
         data.feed.url = elements.input.value;
-        watchState.form.dataState = 'valid';
         const id = uniqueId();
         data.feed.id = id;
-        watchState.feeds.push(data.feed);
         const postsData = data.posts.map((post) => ({
           title: post.title,
           link: post.link,
-          description: post.description,
-          feedId: id,
-          id: uniqueId(),
+          description: post.descriptiФon,
+          ...createFeedId(id),
         }));
+        watchState.feeds.push(data.feed);
         watchState.posts.push(...postsData);
-        setTimeout(() => prepareDataForUpdate(data.feed.url), 5000);
+        watchState.form.dataState = 'valid';
+        watchState.form.processState = 'filling';
       })
       .catch((e) => {
-        watchState.form.processState = 'filling';
+        watchState.form.processState = 'error';
         if (e.isAxiosError) {
           watchState.form.dataState = 'networkError';
         } else {
@@ -117,7 +102,6 @@ const app = () => {
         }
       });
   };
-
   elements.postsContainer.addEventListener('click', (e) => {
     const { id } = e.target.dataset;
     watchState.modalWindowState.postId = id;
@@ -128,9 +112,38 @@ const app = () => {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    const formData = new FormData(e.target).get('url');
     watchState.form.processState = 'sending';
-    validation(elements.input.value.trim(), watchState.feeds.map((feed) => feed.url));
+    validation(formData.trim(), watchState.feeds.map((feed) => feed.url)).then((error) => {
+      if (error) {
+        watchState.form.processState = 'error';
+      } else {
+        getRSS(formData.trim());
+      }
+    });
   });
+  const update = () => {
+    Promise.all(prepareDataForUpdate(watchState.feeds)).then((responses) => {
+      responses.forEach((response) => {
+        const { data } = response;
+        const newData = parserXML(data.contents);
+        const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
+        const { id } = changedFeed;
+        const items = newData.posts;
+        const newPosts = differenceWith(items, watchState.posts, (a, b) => a.link === b.link)
+          .map((item) => ({
+            ...createFeedId(id),
+            title: item.title,
+            link: item.link,
+            description: item.description,
+          }));
+        watchState.posts.push(...newPosts);
+      });
+    })
+      .catch((e) => console.log(e))
+      .finally(setTimeout(() => update(), 5000));
+  };
+  update();
 };
 
 export default app;

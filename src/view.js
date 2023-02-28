@@ -18,10 +18,6 @@ const buildList = () => {
 const renderForm = (elements, i18nextInstance, value) => {
   const status = elements.statusMassage;
   switch (value) {
-    case 'neutral':
-      status.classList.remove('text-success', 'text-danger');
-      status.textContent = i18nextInstance.t('statusMessage.neutral');
-      break;
     case 'invalid':
       status.classList.remove('text-success', 'text-danger');
       status.classList.add('text-danger');
@@ -107,13 +103,13 @@ const renderPosts = (elements, i18nextInstance, values, state) => {
     postsContainer.append(postContainer);
   });
 };
-const renderClickedLinks = (ids) => {
+const markPostAsVisited = (ids) => {
   ids.forEach((id) => {
     const link = document.querySelector(`[data-id='${id}']`);
     link.className = 'fw-normal link-secondary';
   });
 };
-const renderClickedBtns = (elements, state, id) => {
+const renderModal = (elements, state, id) => {
   const popUp = elements.modalContent;
   const link = document.querySelector(`[data-id='${id}']`);
   const header = popUp.querySelector('.modal-title');
@@ -132,6 +128,9 @@ const handleProcessState = (submitButton, processState) => {
       submitButton.disabled = true;
       break;
     case 'filling':
+      submitButton.disabled = false;
+      break;
+    case 'error':
       submitButton.disabled = false;
       break;
     default:
@@ -155,10 +154,10 @@ export default (elements, i18nextInstance, state) => {
         renderFeeds(elements, i18nextInstance, value);
         break;
       case ('modalWindowState.postId'):
-        renderClickedBtns(elements, state, value);
+        renderModal(elements, state, value);
         break;
       case ('uiState.clickedPostIDs'):
-        renderClickedLinks(value);
+        markPostAsVisited(value);
         break;
       default:
         break;
