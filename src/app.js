@@ -79,7 +79,7 @@ const app = () => {
         const postsData = data.posts.map((post) => ({
           title: post.title,
           link: post.link,
-          description: post.descriptiФon,
+          description: post.description,
           ...createFeedId(id),
         }));
         watchState.feeds.push(data.feed);
