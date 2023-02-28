@@ -55,13 +55,7 @@ const app = () => {
       .required();
     return schema.validate(field)
       .then(() => null)
-      .catch((e) => {
-        if (e.type === 'notOneOf') {
-          watchState.form.dataState = 'duplicate';
-        } else {
-          watchState.form.dataState = 'invalid';
-        }
-      });
+      .catch(e => e)
   };
 
   const makeProxyLink = (url) => {
@@ -117,6 +111,12 @@ const app = () => {
     validation(formData.trim(), watchState.feeds.map((feed) => feed.url)).then((error) => {
       if (error) {
         watchState.form.processState = 'error';
+        if (error.type === 'notOneOf') {
+          watchState.form.dataState = 'duplicate';
+        } else {
+          watchState.form.dataState = 'invalid';
+        }
+        
       } else {
         getRSS(formData.trim());
       }
