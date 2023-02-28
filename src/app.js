@@ -55,7 +55,7 @@ const app = () => {
       .required();
     return schema.validate(field)
       .then(() => null)
-      .catch(e => e)
+      .catch((e) => e);
   };
 
   const makeProxyLink = (url) => {
@@ -116,12 +116,12 @@ const app = () => {
         } else {
           watchState.form.dataState = 'invalid';
         }
-        
       } else {
         getRSS(formData.trim());
       }
     });
   });
+
   const update = () => {
     Promise.all(prepareDataForUpdate(watchState.feeds)).then((responses) => {
       responses.forEach((response) => {
