@@ -11,6 +11,8 @@ import parserXML from './parserXML.js';
 
 const { ru } = resources;
 
+const updateTimeout = 5000;
+
 const app = () => {
   const i18nextInstance = i18next.createInstance();
   i18nextInstance.init({
@@ -118,7 +120,6 @@ const app = () => {
       }
     });
   });
-  const updateTimeout = 5000;
 
   const updateFeeds = () => {
     const urls = watchState.feeds.map((feed) => feed.url);
