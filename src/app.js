@@ -106,7 +106,6 @@ const app = () => {
     const formData = new FormData(e.target).get('url').trim();
     watchState.form.processState = 'sending';
     validation(formData, watchState.feeds.map((feed) => feed.url)).then((error) => {
-
       if (error) {
         watchState.form.processState = 'error';
         if (error.type === 'notOneOf') {
@@ -137,9 +136,8 @@ const app = () => {
           description: item.description,
         }));
       watchState.posts.push(...newPosts);
-  }).catch((e) => console.log(e))      
-  );
-     Promise.all(promises).finally(setTimeout(() => update(), updateTimeout))
+    }).catch((e) => console.log(e)));
+    Promise.all(promises).finally(setTimeout(() => update(), updateTimeout));
   };
   update();
 };
