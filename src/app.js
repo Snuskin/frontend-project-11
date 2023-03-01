@@ -48,6 +48,7 @@ const app = () => {
       postId: '',
     },
   };
+
   const watchState = getWatchState(elements, i18nextInstance, initialState);
 
   const validation = (field, urls) => {
@@ -59,14 +60,10 @@ const app = () => {
   };
 
   const makeProxyLink = (url) => {
-    const proxy = new URL('https://allorigins.hexlet.app/get?disableCache=true');
+    const proxy = new URL('/get', 'https://allorigins.hexlet.app');
     proxy.searchParams.set('url', url);
+    proxy.searchParams.set('disableCache', true);
     return proxy;
-  };
-
-  const prepareDataForUpdate = (feeds) => {
-    const urls = feeds.map((feed) => feed.url);
-    return urls.map((url) => axios.get(makeProxyLink(url)));
   };
 
   const getRSS = (url) => {
@@ -106,9 +103,9 @@ const app = () => {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target).get('url');
+    const formData = new FormData(e.target).get('url').trim();
     watchState.form.processState = 'sending';
-    validation(formData.trim(), watchState.feeds.map((feed) => feed.url)).then((error) => {
+    validation(formData, watchState.feeds.map((feed) => feed.url)).then((error) => {
       if (error) {
         watchState.form.processState = 'error';
         if (error.type === 'notOneOf') {
@@ -117,31 +114,31 @@ const app = () => {
           watchState.form.dataState = 'invalid';
         }
       } else {
-        getRSS(formData.trim());
+        getRSS(formData);
       }
     });
   });
 
   const update = () => {
-    Promise.all(prepareDataForUpdate(watchState.feeds)).then((responses) => {
-      responses.forEach((response) => {
-        const { data } = response;
-        const newData = parserXML(data.contents);
-        const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
-        const { id } = changedFeed;
-        const items = newData.posts;
-        const newPosts = differenceWith(items, watchState.posts, (a, b) => a.link === b.link)
-          .map((item) => ({
-            ...createFeedId(id),
-            title: item.title,
-            link: item.link,
-            description: item.description,
-          }));
-        watchState.posts.push(...newPosts);
-      });
-    })
-      .catch((e) => console.log(e))
-      .finally(setTimeout(() => update(), 5000));
+    const urls = watchState.feeds.map((feed) => feed.url);
+    const promises = urls.map((url) => axios.get(makeProxyLink(url)).then((response) => {
+      const { data } = response;
+      const newData = parserXML(data.contents);
+      const changedFeed = watchState.feeds.find((feed) => feed.feedTitle === newData.feed.feedTitle);
+      const { id } = changedFeed;
+      const items = newData.posts;
+      const newPosts = differenceWith(items, watchState.posts, (a, b) => a.link === b.link)
+        .map((item) => ({
+          ...createFeedId(id),
+          title: item.title,
+          link: item.link,
+          description: item.description,
+        }));
+      watchState.posts.push(...newPosts);
+    }));
+
+    Promise.all(promises).then(setTimeout(() => update(), 5000))
+      .catch((e) => console.log(e));
   };
   update();
 };
