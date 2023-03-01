@@ -39,13 +39,13 @@ const app = () => {
     feeds: [],
     form: {
       processState: 'filling',
-      dataState: '',
+      dataState: 'start',
     },
     uiState: {
       clickedPostIDs: [],
     },
     modalWindowState: {
-      postId: '',
+      postId: null,
     },
   };
 
@@ -118,9 +118,9 @@ const app = () => {
       }
     });
   });
+  const updateTimeout = 5000;
 
-  const update = () => {
-    const updateTimeout = 5000;
+  const updateFeeds = () => {
     const urls = watchState.feeds.map((feed) => feed.url);
     const promises = urls.map((url) => axios.get(makeProxyLink(url)).then((response) => {
       const { data } = response;
@@ -137,9 +137,9 @@ const app = () => {
         }));
       watchState.posts.push(...newPosts);
     }).catch((e) => console.log(e)));
-    Promise.all(promises).finally(setTimeout(() => update(), updateTimeout));
+    Promise.all(promises).finally(setTimeout(() => updateFeeds(), updateTimeout));
   };
-  update();
+  updateFeeds();
 };
 
 export default app;
