@@ -106,6 +106,7 @@ const app = () => {
     const formData = new FormData(e.target).get('url').trim();
     watchState.form.processState = 'sending';
     validation(formData, watchState.feeds.map((feed) => feed.url)).then((error) => {
+
       if (error) {
         watchState.form.processState = 'error';
         if (error.type === 'notOneOf') {
@@ -120,6 +121,7 @@ const app = () => {
   });
 
   const update = () => {
+    const updateTimeout = 5000;
     const urls = watchState.feeds.map((feed) => feed.url);
     const promises = urls.map((url) => axios.get(makeProxyLink(url)).then((response) => {
       const { data } = response;
@@ -135,10 +137,9 @@ const app = () => {
           description: item.description,
         }));
       watchState.posts.push(...newPosts);
-    }));
-
-    Promise.all(promises).then(setTimeout(() => update(), 5000))
-      .catch((e) => console.log(e));
+  }).catch((e) => console.log(e))      
+  );
+     Promise.all(promises).finally(setTimeout(() => update(), updateTimeout))
   };
   update();
 };
